@@ -1,0 +1,27 @@
+# Secrets / per-machine config (never commit)
+config.js
+public/config.js
+functions/.env
+functions/.env.*
+!functions/.env.example
+.runtimeconfig.json
+*.local
+
+# Dependencies and build output
+node_modules/
+functions/node_modules/
+
+# Firebase
+.firebase/
+firebase-debug.log*
+firestore-debug.log*
+ui-debug.log*
+database-debug.log*
+pubsub-debug.log*
+emulator-data/
+
+# OS / editor
+.DS_Store
+Thumbs.db
+desktop.ini
+.vscode/

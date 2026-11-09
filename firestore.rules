@@ -1,0 +1,92 @@
+rules_version = '2';
+
+// Multi-tenant rules. Every tenant-owned document carries `tenantId`.
+// A signed-in user's tenant and role come from Firebase Auth custom claims
+// ({ tenantId, role }) that only Cloud Functions can set.
+//   role: "admin"    = platform admin (Brian) - can see every tenant
+//         "operator" = runs campaigns for a tenant
+//         "tenant"   = tenant user
+service cloud.firestore {
+  match /databases/{database}/documents {
+
+    function signedIn() { return request.auth != null; }
+    function role() { return signedIn() ? request.auth.token.get('role', '') : ''; }
+    function myTenant() { return signedIn() ? request.auth.token.get('tenantId', '') : ''; }
+    function isAdmin() { return role() == 'admin'; }
+    function isMember() { return role() in ['admin', 'operator', 'tenant']; }
+    function canWrite() { return role() in ['admin', 'operator', 'tenant']; }
+
+    // Existing doc belongs to my tenant (or I'm platform admin)
+    function ownsExisting() {
+      return isAdmin() || (isMember() && resource.data.tenantId == myTenant());
+    }
+    // Doc being written belongs to my tenant and tenantId can't be moved
+    function ownsIncoming() {
+      return isAdmin() || (canWrite() && request.resource.data.tenantId == myTenant());
+    }
+    function tenantUnchanged() {
+      return request.resource.data.tenantId == resource.data.tenantId;
+    }
+
+    match /users/{uid} {
+      allow read: if signedIn() && (request.auth.uid == uid || isAdmin());
+      allow write: if false; // managed by Cloud Functions
+    }
+
+    match /tenants/{tenantId} {
+      allow read: if isAdmin() || (isMember() && myTenant() == tenantId);
+      allow update: if isAdmin() || (role() == 'operator' && myTenant() == tenantId);
+      allow create, delete: if isAdmin();
+    }
+
+    // Tenant-owned collections
+    match /programs/{id} {
+      allow read: if ownsExisting();
+      allow create: if ownsIncoming();
+      allow update: if ownsExisting() && ownsIncoming() && tenantUnchanged();
+      allow delete: if ownsExisting() && role() in ['admin', 'operator'];
+    }
+    match /campaigns/{id} {
+      allow read: if ownsExisting();
+      allow create: if ownsIncoming();
+      allow update: if ownsExisting() && ownsIncoming() && tenantUnchanged();
+      allow delete: if ownsExisting() && role() in ['admin', 'operator'];
+    }
+    match /leads/{id} {
+      allow read: if ownsExisting();
+      allow create: if ownsIncoming();
+      allow update: if ownsExisting() && ownsIncoming() && tenantUnchanged();
+      allow delete: if isAdmin();
+    }
+    match /sequences/{id} {
+      allow read: if ownsExisting();
+      allow create: if ownsIncoming();
+      allow update: if ownsExisting() && ownsIncoming() && tenantUnchanged();
+      allow delete: if ownsExisting() && role() in ['admin', 'operator'];
+    }
+    // Append-only event log
+    match /events/{id} {
+      allow read: if ownsExisting();
+      allow create: if ownsIncoming();
+      allow update, delete: if false;
+    }
+    match /queues/{queue}/{tenantId}/{itemId} {
+      allow read, write: if isAdmin() || (isMember() && myTenant() == tenantId);
+    }
+
+    // Shared cross-tenant cache (businesses, contacts): written only by
+    // Cloud Functions so no tenant pays for the same lookup twice.
+    match /businesses/{id} {
+      allow read: if isMember();
+      allow write: if false;
+    }
+    match /contacts/{id} {
+      allow read: if isMember();
+      allow write: if false;
+    }
+
+    match /{document=**} {
+      allow read, write: if false;
+    }
+  }
+}
