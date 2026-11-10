@@ -59,6 +59,7 @@ Decision-maker titles, in priority order: Owner, Marketing Manager, Office Manag
 ### LinkedIn (human-sent queue, never automated)
 - Brian's real profile only. No automation tools, no new profiles (LinkedIn flags both).
 - The system finds the right person, mutual connections, and a conversation hook, and writes the connect note and follow-ups. It produces a daily queue that Brian (or his VA, Paul) sends manually in a few minutes. Track sent/accepted/replied by manual check-off.
+- **Decided 2026-11-10:** keep the human part tiny. Use a phone-first one-tap queue (copy note + open profile, tap Sent) and AI-drafted replies. No automation or sender tools such as Yoke. See `docs/linkedin-queue-plan.md`.
 
 ### Physical mail (optional sequence step)
 - A sequence step that outputs a postcard/letter job (recipient data + copy) into a CSV/export for Allegra's normal production workflow. No print-status tracking in this app — PrintSmith Vision owns that.

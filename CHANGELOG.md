@@ -1,5 +1,8 @@
 # Changelog — allegra-prospector
 
+## Decisions
+- 2026-11-10: LinkedIn stays human-sent, with the human part kept to a few minutes a day: a one-tap phone queue and AI reply drafts. No automation tools. Plan in `docs/linkedin-queue-plan.md`, built in Step 3.
+
 ## v2 — Step 1: Campaign-definition interview + Target Profile
 - Email + password sign-in (with email verification and password reset). The first verified sign-in from an email in `ADMIN_EMAILS` becomes platform **Admin** of tenant `allegra` (custom claims `{tenantId, role}`); the tenant doc is created automatically. Everyone else lands on "Waiting for access" until the invite flow (Step 5).
 - Programs list per tenant, with a one-click **Start GeoConnect interview**, pre-filled from PROJECT_BRIEF §2–3. Answers the brief didn't settle are marked "Suggested:"; proof points are left blank on purpose (the AI never makes up results).
